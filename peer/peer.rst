@@ -407,7 +407,7 @@ In order to replicate data into Objects, you need the Client IP of the object st
 
 #. Log in to **Prism Central** (e.g., 10.XX.YY.39) on your Nutanix cluster, and then navigate to **Services** > **Objects**.
 
-#. In the **Object Stores** section, find the appropriate object store in the table and note the Client Used IPs.
+#. In the **Object Stores** section, find the appropriate object store in the table and note the Client Used IPs. The IP should be similar to 10.XX.YY.18.
 
    .. figure:: images/clientip.png
 
