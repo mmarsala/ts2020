@@ -4,12 +4,14 @@
 Managing Citrix Desktops
 ------------------------------
 
-Introduction...
+The combination of Nutanix, AHV, and XenDesktop make for a smooth experience in deploying new infrastructure and virtual desktops - but what about as that environment changes and expands?
 
-**In this exercise you will use perform "Day 2" operations for a XenDesktop environment, including expanding an existing Machine Catalog with more desktop VMs, and rolling out an updated gold image to your non-persistent Machine Catalog.**
+**In this exercise you will perform "Day 2" operations for a XenDesktop environment, including expanding an existing Machine Catalog with more desktop VMs, and rolling out an updated gold image to your non-persistent Machine Catalog.**
 
 Adding More Desktops
 ++++++++++++++++++++
+
+Nutanix makes it simple to expand a cluster by 1 or more nodes through a One Click operation in Prism. In the below exercise, you'll expand your pool of virtual desktops to take advantage of the compute and storage resources that you're able to expand at will.
 
 #. In **Citrix Studio > Machine Catalogs**, right-click your Non-Persistent Machine Catalog and select **Add Machines**.
 
@@ -42,9 +44,15 @@ Adding More Desktops
 Updating the Gold Image
 +++++++++++++++++++++++
 
+One of the key benefits of non-persistent desktops is the ability to uniformly roll out updates to a large number of systems after only having made the change to your master image. In the exercise below you'll walk through how fast and easy that process is with Citrix on AHV.
+
 #. Power on your *Initials*\ **-GoldImage** VM and connect via VM console or RDP.
 
 #. Within your **GoldImage** VM, install or update an application (e.g. PuTTY, Atom, 7Zip, etc.) and then shut down the VM.
+
+   .. note::
+
+      Your user is not part of the **Local Administrators** group, so you may be unable to install certain applications. If you encounter an error trying to install an application, hold the **Shift** key, right-click the installer, and select **Run as different user**. Use your NTNXLAB\\Administrator credentials to complete the installation.
 
    .. figure:: images/5.png
 
@@ -62,7 +70,7 @@ Updating the Gold Image
 
    .. note::
 
-     Update Machines is not an available for your Persistent Machine Catalog as updates to persistent desktops are handled via traditional patch management tools.
+     Update Machines is not available for your Persistent Machine Catalog as updates to persistent desktops are handled via traditional patch management tools.
 
 #. Click **Next**.
 
@@ -78,7 +86,7 @@ Updating the Gold Image
 
    .. note::
 
-     These choices are based on wanting to roll out an update as quickly as possible, but note Studio provides maximum flexibility for Rollout Strategy, allowing Administrators to proactively notify users and stagged gold image deployment for large pools over the period of several hours.
+     These choices are based on wanting to roll out an update as quickly as possible, but note Studio provides maximum flexibility for Rollout Strategy, allowing Administrators to proactively notify users and stagger gold image deployment for large pools over the period of several hours.
 
 #. Review configuration and click **Finish**.
 

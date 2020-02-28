@@ -15,7 +15,7 @@ As you can see there’s a 48% improvement of desktop density per node when appl
 Deploying a VM
 ++++++++++++++
 
-If you completed the :ref:`move` lab, skip to `Installing the VDA`_. Otherwise, follow the steps below to provision a VM to begin building your gold image.
+If you completed the :ref:`move` lab, skip to FramePausingUpdates_. Otherwise, follow the steps below to provision a VM to begin building your gold image.
 
 #. In **Prism Central**, select :fa:`bars` **> Virtual Infrastructure > VMs**.
 
@@ -45,12 +45,31 @@ If you completed the :ref:`move` lab, skip to `Installing the VDA`_. Otherwise, 
 
 #. Click **Save** to create the VM.
 
-#. Select your Move VM and click **Power On**.
+#. Select your VM and click **Power On**.
+
+.. _FramePausingUpdates:
+
+Pausing Updates
++++++++++++++++
+
+Before starting to build your **Windows 10** image it is important the ensure that no Windows Updates are in progress, as this can cause issues with cloning.
+
+#. Open the VM console or connect via RDP.
+
+   - **User Name** - Nutanix
+   - **Password** - nutanix/4u
+
+#. Open **System Settings > Windows Update** and click **Pause Updates for 7 Days**.
+
+   .. figure:: images/24.png
 
 Running Citrix Optimizer
 ++++++++++++++++++++++++
 
 #. Open the VM console or connect via RDP.
+
+   - **User Name** - Nutanix
+   - **Password** - nutanix/4u
 
 #. Within the VM console, download http://10.42.194.11/workshop_staging/CitrixOptimizer.zip and extract to a directory.
 
@@ -81,9 +100,13 @@ Running VMware OS Optimization Tool
 
 #. Right-click **VMwareOSOptimizationTool.exe** and select **Run as Administrator**.
 
-#. Click the **Select All** checkbox, and click **Analyze**.
+#. Click the **Select All** checkbox. Scroll down to **Cleanup Jobs** and un-select the 4 available optimizations. Click **Analyze**.
 
    .. figure:: images/16.png
+
+   .. note::
+
+      The Cleanup Jobs are excluded from this exercise as they can be time consuming to apply.
 
 #. Note the outstanding optimizations not applied in the **Analysis Summary** pane.
 
@@ -93,12 +116,14 @@ Running VMware OS Optimization Tool
 
    .. figure:: images/18.png
 
-#. Review the results and then restart your Gold Image VM.
+#. Review the results and then **restart your Gold Image VM**.
 
 Installing the Frame Guest Agent
 ++++++++++++++++++++++++++++++++
 
-<What is the Frame Agent?>
+The Frame Guest Agent (FGA) is the Frame component installed in every Frame-managed workload VM (Sandbox, Production instances, Utility servers). The FGA implements the Frame Remoting Protocol (FRP), an H.264-based video stream, between the end user’s endpoint device and the Frame-managed workload VM. If an NVIDIA GPU is supported within the workload VM, FGA will leverage NVENC hardware-based H.264 encoding to offload encoding from workload VM’s CPU(s).
+
+Additionally, during the brokering workflow, the Frame agent works in conjunction with Frame platform to ensure that end user requests for access to a workload VM is authorized before allowing the FRP stream to start. FGA also enforces session setting policies (clipboard sync, directionality of clipboard sync, file upload/download, printing, timeout parameters, QoS parameters, etc.) and handles the mounting and unmounting of personal drives, enterprise profile disks, and integrations to cloud storage providers, as configured by the Account Administrator.
 
    .. note::
 
@@ -121,11 +146,15 @@ Installing the Frame Guest Agent
 
       Once the Frame Guest Agent is successfully installed the VM can no longer be accessed via the built-in AHV VNC console.
 
-#. Update the VM timezone to UTC.
+#. Update the VM timezone to UTC. Click **Sync Now** to ensure the time on your VM is accurate.
 
    .. figure:: images/20.png
 
-# **IMPORTANT** From the **Control Panel**, uninstall any previously installed copied of **Microsoft Visual C++ Redistributable**.
+#. **IMPORTANT** From the **Control Panel**, uninstall any previously installed copied of **Microsoft Visual C++ Redistributable**.
+
+   .. note::
+
+      Philip Lau would like to remind you that **ANY** previously installed **Microsoft Visual C++ Redistributable** means **ALL** of them, and not just the two in the screenshot below.
 
    .. figure:: images/22.png
 
@@ -154,3 +183,12 @@ Installing the Frame Guest Agent
    .. figure:: images/23.png
 
 You have successfully created a gold master image to use for your Xi Frame workloads.
+
+Takeaways
++++++++++
+
+What are the key things learned in this exercise?
+
+- Creating a customized Windows 10 gold image for Frame is quick and easy.
+
+- EUC image optimization tools are not solution or hypervisor specific and can be easily applied to improve virtual desktop performance and increase host density.

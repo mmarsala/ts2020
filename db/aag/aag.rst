@@ -1,23 +1,25 @@
 .. _aag:
 
--------------------
-Clustered Databases
--------------------
+---------------------------------
+Simplifying Database Availability
+---------------------------------
 
-Introduction
+Up to this point, we have been using Era to create single instance databases. For any real, production database, you would want to use a clustered solution to provide high availability, reducing any chance of downtime for your application or your business. Era supports provisioning and managing Microsoft SQL Server AlwaysOn Availability Group and Oracle RAC clustered databases.
 
-**In this lab you will...**
+SQL Server AAG clusters have many moving parts, and deploying a single cluster can easily take several hours or more.
+
+**In this lab you will clone your existing production SQL Server database to a database cluster and test its availability using the Fiesta app.**
 
 Creating an Era Managed Network
 +++++++++++++++++++++++++++++++
 
 .. note::
 
-   This operation only needs to be performed **ONCE** per cluster. If the **EraManaged** network has already been added as a resource in Era, you can move on to `Provisioning an AAG`_.
+   This operation only needs to be performed **ONCE** per cluster. If the **EraManaged** network has already been added as a resource in Era, you can move on to :ref:`provisioningaag`.
 
    .. figure:: images/1.png
 
-<Why does Era require an Era manged network in order to provision a clustered database?>
+Era requires a network whose IPs are managed by the Era appliance, allowing it to assign that static IPs required for the cluster VMs and floating IP for the SQL Listener.
 
 #. In **Prism Central**, select :fa:`bars` **> Virtual Infrastructure > Subnets**.\
 
@@ -26,7 +28,7 @@ Creating an Era Managed Network
 #. Click **+ Create Network** and fill out the following fields:
 
    - **Name** - EraManaged
-   - **VLAN ID** - *Refer to Cluster Assignment Spreadsheet*
+   - **VLAN ID** - *Refer to*  :ref:`clusterassignments`
 
    .. figure:: images/2.png
 
@@ -40,13 +42,13 @@ Creating an Era Managed Network
 
    - **Select a VLAN** - EraManaged
    - Select **Manage IP Address Pool**
-   - **Gateway** - *Refer to Cluster Assignment Spreadsheet*
+   - **Gateway** - *Refer to*  :ref:`clusterassignments`
    - Select **Verify**
-   - **Subnet Mask** - *Refer to Cluster Assignment Spreadsheet*
-   - **Primary DNS** - *Refer to Cluster Assignment Spreadsheet*
+   - **Subnet Mask** - *Refer to*  :ref:`clusterassignments`
+   - **Primary DNS** - *Refer to*  :ref:`clusterassignments`
    - **DNS Domain** - ntnxlab.local
-   - **First Address** - *Refer to Cluster Assignment Spreadsheet*
-   - **Last Address** - *Refer to Cluster Assignment Spreadsheet*
+   - **First Address** - *Refer to*  :ref:`clusterassignments`
+   - **Last Address** - *Refer to*  :ref:`clusterassignments`
 
    .. figure:: images/4.png
 
@@ -61,6 +63,8 @@ Creating an Era Managed Network
    .. figure:: images/5.png
 
 #. Click **Create**.
+
+.. _provisioningaag:
 
 Provisioning an AAG
 +++++++++++++++++++
@@ -99,18 +103,33 @@ Provisioning an AAG
 
    .. figure:: images/8.png
 
-   <Need exposition on other options here: Max replicas (9 for SQL 2016), Availability Mode options, Readable Secondary what is that, what are the options, Auto failover on vs off>
+   .. note::
+
+      SQL 2016 and above supports up to 9 secondary replicas.
+
+      The **Primary** server indicates which host you want the AAG to start on.
+
+      **Auto Failover** allows the AAG to failover automatically when it detects the **Primary** host is unavailable. This is preferred in most deployments as it requires no additional administrator intervention, allowing for maximum application uptime.
+
+      **Availability Mode** can be configured as either **Synchronous** or **Asynchronous**.
+
+         - **Synchronous-commit replicas** - Data is committed to both primary and secondary nodes at the same time. This mode supports both **Automatic** and **Manual Failover**.
+         - **Asynchronous-commit replicas** - Data is committed to primary first and then after some time-interval, data is committed to the secondary nodes. This mode only supports **Manual Failover**.
+
+      **Readable Secondaries** allows you to offload your secondary read-only workloads from your primary replica, which conserves its resources for your mission critical workloads. If you have mission critical read-workload or the workload that cannot tolerate latency (up to a few seconds), you should run it on the primary.
 
 #. Click **Clone**.
 
    .. figure:: images/9.png
 
-#. Monitor the refresh on the **Operations** page. This operation should take approximately 35 minutes. You can proceed to the <NEXT LAB> while your clustered database servers are provisioned.
+#. Monitor the refresh on the **Operations** page. This operation should take approximately 35 minutes. **You can proceed to the while your clustered database servers are provisioned.**
 
    .. figure:: images/10.png
 
 Configure Fiesta for AAG
 ++++++++++++++++++++++++
+
+Rather than deploy an additional Fiesta web server VM, you will update the configuration of your existing VM to point to the database cluster.
 
 #. In **Era > Databases > Clones**, and select your most recent clone to view the details of the AAG deployment. Note the **Listener IP Address** of the Always on Availability Group.
 
@@ -135,6 +154,8 @@ Configure Fiesta for AAG
 Failing A Cluster Server
 ++++++++++++++++++++++++
 
+Time to break stuff!
+
 #. Open your **Dev Fiesta** web app and make a change such as deleting a store and/or adding additional products to a store.
 
    .. figure:: images/15.png
@@ -150,3 +171,11 @@ Failing A Cluster Server
    .. figure:: images/17.png
 
 #. Refresh your **Dev Fiesta** web app and validate data is being displayed properly.
+
+Takeaways
++++++++++
+
+What are the key things we learned in this lab?
+
+- Production databases require high levels of availability to prevent downtime
+- Era makes the deployment of complex, clustered databases as easy (and as fast) as single instance databases

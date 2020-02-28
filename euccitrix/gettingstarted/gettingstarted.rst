@@ -4,7 +4,14 @@
 Getting Started
 ----------------------
 
-Introduction of EUC-Citrix lab track, user scenario is migrating VDI environment from Horizon View to Citrix/AHV, enabling user directories, profile management, flow, reporting.
+Welcome to the End User Computing lab track featuring Citrix Apps & Desktops. This track is meant to provide you with first hand experience in why Nutanix is an ideal platform for Citrix workloads. In addition to the benefits than Nutanix HCI brings to any virtual desktop deployment, such as linear scalability and consistent performance, Nutanix brings additional benefits that you'll explore through labs:
+
+- Native tools for migrating existing desktop images from ESXi
+- Citrix integration with AHV to provide a no-cost, easy to manage platform for desktop virtualization
+- Fast desktop provisioning, including rolling out image updates to large pools of desktops
+- Native file services with Nutanix Files to deliver user data, profiles, and User Personalization Layers
+- Native microsegmentation with Nutanix Flow to secure a virtual desktop environment
+- Rich monitoring and automation capabilities with Prism Pro
 
 If you have not previously completed the **Private Cloud** lab track, follow the quick instructions below to provision your user VLAN and Windows Tools VM that will be used throughout this lab track.
 
@@ -24,30 +31,29 @@ Typically, Hosted POC clusters provide 2x /25 VLANs. In order to provide adequat
 
 #. Click **Network Config**, select *Your Assigned Cluster*, and click **OK**.
 
-#. Click **+ Create Network** and fill out the following fields:
+#. Click **+ Create Network** and fill out the following fields, using the **User** specific network details in :ref:`clusterassignments`:
 
-   - **Name** - *Refer to Cluster Assignment Spreadsheet*
-   - **VLAN ID** - *Refer to Cluster Assignment Spreadsheet*
+   - **Name** - *Refer to*  :ref:`clusterassignments`
+   - **VLAN ID** - *Refer to*  :ref:`clusterassignments`
    - Select **Enable IP Address Management**
-   - **Network IP Address / Prefix Length** - *Refer to Cluster Assignment Spreadsheet*
-   - **Gateway IP Address** - *Refer to Cluster Assignment Spreadsheet*
-   - **Domain Name Servers** - *Refer to Cluster Assignment Spreadsheet*
+   - **Network IP Address / Prefix Length** - *Refer to*  :ref:`clusterassignments`
+   - **Gateway IP Address** - *Refer to*  :ref:`clusterassignments`
+   - **Domain Name Servers** - *Refer to*  :ref:`clusterassignments`
    - **Domain Search** - ntnxlab.local
    - **Domain Name** - ntnxlab
    - Select **+ Create Pool**
-   - **Start Address** - *Refer to Cluster Assignment Spreadsheet*
-   - **End Address** - *Refer to Cluster Assignment Spreadsheet*
+   - **Start Address** - *Refer to*  :ref:`clusterassignments`
+   - **End Address** - *Refer to*  :ref:`clusterassignments`
+   - Click **Submit**
 
    .. figure:: images/1.png
 
 #. Click **Save**.
 
-Deploying your Tools VM
-+++++++++++++++++++++++
+Deploying your Windows Tools VM
++++++++++++++++++++++++++++++++
 
 #. In **Prism Central**, select :fa:`bars` **> Virtual Infrastructure > VMs**.
-
-   .. figure:: images/1.png
 
 #. Click **Create VM**.
 
@@ -64,7 +70,7 @@ Deploying your Tools VM
    - Select **+ Add New Disk**
       - **Type** - DISK
       - **Operation** - Clone from Image Service
-      - **Image** - ToolsVM.qcow2
+      - **Image** - WinToolsVM.qcow2
       - Select **Add**
 
    - Select **Add New NIC**

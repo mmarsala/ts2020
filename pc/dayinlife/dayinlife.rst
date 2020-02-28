@@ -4,14 +4,23 @@
 A Day in the Life
 -----------------
 
-Introduction
+In a constant effort to improve our products, members of the Nutanix Product Management team have been working in conjunction with field sales teams to conduct long form interviews and panels with large-scale Nutanix customers to understand how we can ease adoption, tighten workflows, and prioritize the introduction of new functionality. *Basically - why do people love Nutanix, and what can we do to make their experience better.*
 
-**In this lab you will...**
+From these studies, we were able to identify much of what a typical "Day in the Life" of a Nutanix administrator can look like - and have adapted it into the starting point for the Private Cloud lab track. It is easy to get caught up in all of the amazing things Nutanix is working to bring to market, and subsequently lose sight of the core capabilities that have brought Nutanix success:
+
+- The industry's best HCI software - AOS
+- An unmatched consumer-grade management experience in Prism
+
+Our Private Cloud story is built on the strongest *foundation* (sorry, couldn't help it) possible.
+
+**In this lab you will follow a day in the life of Carol O'Kay, a 10 year veteran of administrating vSphere environments on 3-tier architecture, who has recently deployed her first Nutanix cluster. The Nutanix cluster is being used for a mix of production IT workloads, and supporting the engineering efforts for her company's primary application, an inventory management solution called Fiesta, used to support the company's retail storefronts.**
 
 Configuring Storage
 +++++++++++++++++++
 
-Using your **Cluster Assignment Spreadsheet**, identify your **Prism Element** cluster IP.
+In this brief exercise, you will experience how IT generalists can provision and monitor primary storage for their virtualized environment through Prism with just a few clicks - a stark contrast to planning and managing traditional SAN storage.
+
+#. Using your **Cluster Assignment Spreadsheet**, identify your **Prism Element** cluster IP.
 
 #. In a browser, open **Prism Element** and log in using the following local user credentials:
 
@@ -24,11 +33,15 @@ Using your **Cluster Assignment Spreadsheet**, identify your **Prism Element** c
 
    .. figure:: images/2.png
 
-   <Exposition about storage overview dashboad, data reduction/efficiency, capacity>
+#. Mouse over the **Storage Summary** and **Capacity Optimization** widgets for explanations of what each is displaying.
+
+   It's important to understand that Nutanix considers the **Data Reduction** ratio as savings ONLY from compression, deduplication, and erasure coding. The **Overall Efficiency**, comparable to what many other vendors consider "Data Reduction," incorporates the aforementioned data efficiency features, as well as data avoidance features like thin provisioning, intelligent cloning, and zero suppression.
 
    .. figure:: images/3.png
 
-#. Select **Table** and click **+Storage Container**.
+#. Select **Table** and click **+ Storage Container**.
+
+   Storage Containers represent logical policies for storage, allowing you to create reservations, enable/disable data efficiency features like compression, deduplication, and erasure coding, and to configure Redundancy Factor (RF). Every Storage Container on a Nutanix cluster still leverages all physical disks within the cluster, referred to as the Storage Pool. A typical Nutanix cluster will have a small number of Storage Containers, typically corresponding to workloads that benefit from different data efficiency technologies.
 
    .. figure:: images/4.png
 
@@ -36,14 +49,56 @@ Using your **Cluster Assignment Spreadsheet**, identify your **Prism Element** c
 
    .. figure:: images/5.png
 
-   <Exposition about different options, when to use them, when you would need different storage containers, configuring resiliency, how they all share 1 pool of physical storage>
+   Nutanix provides different ways to optimize storage capacity that are intelligent and adaptive to workloads characteristics. Nutanix uses native data avoidance (thin provisioning, intelligent cloning and zero suppression) and data reduction (compression, deduplication, and erasure coding) techniques to handle data efficiently. All data reduction optimizations are performed at the container level, so different containers can use different settings.
+
+   **Compression**
+
+      Nutanix provides both inline and post-process data compression. Irrespective of inline or post-process compression, write data coming into OpLog that is >4k and shows good compression, will be written compressed in OpLog. For inline compression (Delay=0), sequential streams of data or large size I/Os (>64K) will be compressed when writing to the Extent Store. For post-process (Delay > 0), data is compressed after it is drained from OpLog to the Extent Store, after compression delay is met.
+
+      Compression provides on-disk space savings for applications such as databases, and results in a lower number of writes being written to storage. Post-process compression is turned ON by default on all containers. Starting 5.18, inline compression will be turned ON by default on all containers. We recommend turning ON inline compression for almost all use cases. Workloads not ideal for compression are encrypted datasets or already compressed datasets.
+
+   **Erasure Coding**
+
+      To provide a balance between availability and the amount of storage required, DSF provides the ability to encode data using erasure codes (EC). Like RAID (levels 4, 5, 6, etc.) where parity is calculated, EC encodes a strip of data blocks across different nodes and calculates parity. In the event of a host and/or disk failure, the parity data is used to calculate any missing data blocks (decoding).  In the case of DSF, the data block must be on a different node and belong to a different vDisk. EC is a post-process operation and is done on write cold data (Data that hasn’t been overwritten in more than 7 days). The number of data and parity blocks in a strip is chosen by the system based on number of nodes and configured failures to tolerate.
+
+      Turn on EC-X for non-mission-critical workloads and workloads that have a significant amount of write cold data, since erasure coding works on write cold data and provides more usable storage. For more information refer to `application specific best practice guides <https://portal.nutanix.com/page/documents/solutions/list/>`_.
+
+   **Deduplication**
+
+      When enabled, DSF does capacity-tier and performance-tier deduplication. Data is fingerprinted on ingest using a SHA-1 hash that is stored as metadata. When duplicate data is detected based on multiple copies with the same fingerprint, a background process removes the duplicates. When deduplicated data is read, it is placed in a unified cache, and any subsequent requests for data with the same fingerprint are satisfied directly from cache.
+
+      Deduplication is recommended for full clones, P2V migrations and Persistent Desktops.
+
+   **Redundancy Factor**
+
+      Redundancy Factor controls the number of data copies. Observe that the Redundancy Factor cannot be configured for this cluster, this is due to the minimum number of nodes required to support RF3 is 5.
+
+   .. note::
+
+      For more information on how Nutanix protects your data or implements data reduction, click the diagram below to review the relevant section of the Nutanix Bible.
+
+      .. figure:: https://nutanixbible.com/imagesv2/data_protection.png
+         :target: https://nutanixbible.com/#anchor-book-of-acropolis-data-protection
+         :alt: Nutanix Bible - Data Protection
 
 #. Click **Save** to create the storage and mount it to all available hosts within the cluster.
+
+   In vSphere or Hyper-V environments, creating the Storage Container will also automate the process of mounting the storage to the hypervisor.
+
+#. Select an existing Storage Container, such as **buckets-ctr-data...**, and review the individual savings from different data reduction/avoidance features, as well as the **Effective Capacity**, which is a projection of available storage based on the overall efficiency. These values are found in the **Storage Container Details** table.
+
+   Unfortunately it is not possible to easily test data resiliency capabilities of the cluster in a shared environment, but the short video below will walk you through the experience from Prism when a node in the cluster is unexpectedly lost.
+
+   .. raw:: html
+
+     <center><iframe width="640" height="360" src="https://www.youtube.com/embed/hA4l1UHZO2w?rel=0&amp;showinfo=0" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></center>
 
 Provisioning a New Network
 ++++++++++++++++++++++++++
 
-<Exposition about need to create additional VM network>
+In this exercise Carol will use Prism to configure a new VM Network for the cluster.
+
+AHV leverages Open vSwitch (OVS) for all VM networking. OVS is an open source software switch implemented in the Linux kernel and designed to work in a multiserver virtualization environment. Each AHV server maintains an OVS instance, and all OVS instances combine to form a single logical switch. Each node is typically uplinked to a physical switch port trunked/tagged to multiple VLANs, which will be exposed as virtual networks.
 
 .. note::
 
@@ -55,30 +110,37 @@ Provisioning a New Network
 
    .. figure:: images/9.png
 
-#. Click **+ Create Network** and fill out the following fields:
+#. Click **+ Create Network** and fill out the following fields, using the **User** specific network details in :ref:`clusterassignments`:
 
-   - **Name** - *Refer to Cluster Assignment Spreadsheet*
-   - **VLAN ID** - *Refer to Cluster Assignment Spreadsheet*
+   - **Name** - *Refer to*  :ref:`clusterassignments`
+   - **VLAN ID** - *Refer to*  :ref:`clusterassignments`
    - Select **Enable IP Address Management**
-   - **Network IP Address / Prefix Length** - *Refer to Cluster Assignment Spreadsheet*
-   - **Gateway IP Address** - *Refer to Cluster Assignment Spreadsheet*
-   - **Domain Name Servers** - *Refer to Cluster Assignment Spreadsheet*
+   - **Network IP Address / Prefix Length** - *Refer to*  :ref:`clusterassignments`
+   - **Gateway IP Address** - *Refer to*  :ref:`clusterassignments`
+   - **Domain Name Servers** - *Refer to*  :ref:`clusterassignments`
    - **Domain Search** - ntnxlab.local
    - **Domain Name** - ntnxlab
    - Select **+ Create Pool**
-   - **Start Address** - *Refer to Cluster Assignment Spreadsheet*
-   - **End Address** - *Refer to Cluster Assignment Spreadsheet*
+   - **Start Address** - *Refer to*  :ref:`clusterassignments`
+   - **End Address** - *Refer to*  :ref:`clusterassignments`
+   - Click **Submit**
 
    .. figure:: images/8.png
 
+   Note that AHV is capable of providing integrated DHCP services (IPAM), allowing virtualization administrators to allocate IPs to VMs from a configured pool, or easily specifying IPs as DHCP reservations when adding virtual NICs to VMs.
+
 #. Click **Save**.
 
+   The configured virtual network will now be available across all nodes within the cluster. Virtual networks in AHV behave like Distributed Virtual Switches in ESXi, meaning you do not need to configure the same settings on each individual host within the cluster.
+
 #. Close the **Network Configuration** window.
+
+   You're done - simple stuff! You will continue to use this network for the following exercises.
 
 Responding to VM Creation Requests
 ++++++++++++++++++++++++++++++++++
 
-<Some exposition about building template images, ability to merge in unattend files, script via CLI>
+Virtualization administrators are commonly tasked with deployment of new VMs. In this exercise, Carol walks through deployment of an AHV VM in Prism as a Nutanix administrator.
 
 #. Return to the **VM** page in **Prism Element** from the drop down menu.
 
@@ -104,13 +166,23 @@ Responding to VM Creation Requests
       - **VLAN Name** - *Assigned User VLAN*
       - Select **Add**
 
+   Similar to public cloud providers, Nutanix AHV provides an Image Service feature allows you to build a store of imported files that you can use to mount a CD-ROM device from an ISO image or an operating system Disk from a disk image when creating a VM. The Image Service supports raw, vhd, vhdx, vmdk, vdi, iso, and qcow2 disk formats.
+
+   Note that the VM creation wizard also provides the ability to specify a Unattend.xml file for Windows Sysprep automation, or Cloud-Init file for Linux OS configuration.
+
 #. Click **Save** to create the VM.
+
+   .. note::
+
+      Many VM operations, including VM creation can be scripted using the AHV CLI, ``acli``. Certain features, such as Secure Boot and vNUMA can currently only be enabled for a VM through the command line. The ACLI Reference Guide can be found `here <https://portal.nutanix.com/#/page/docs/details?targetId=Command-Ref-AOS-v5_16:acl-acli-vm-auto-r.html>`_.
+
+      You can SSH into any of your Nutanix CVMs and attempt creating an additional VM using ``acli``.
 
 #. Using the search field at the top of the table, filter for the requested VM. Select the VM and click **Power On** from the list of actions below the table.
 
    .. figure:: images/12.png
 
-#. Once the VM has completed booting, Carol can note the IP address
+#. Once the VM has completed booting, note the **IP Address**.
 
    .. figure:: images/11.png
 
@@ -122,6 +194,10 @@ Responding to VM Creation Requests
 
 Enabling User Self Service
 ++++++++++++++++++++++++++
+
+While Prism and ``acli`` provide simple workflows for creating VMs, Carol is regularly inundated with these requests and would love to focus more of her time on modernizing other parts of her organization's aging infrastructure, and attending her son's soccer games.
+
+In the following exercises, Carol is going to up her Private Cloud game and bring IaaS self-service to her users leveraging native capabilities in **Prism Central**.
 
 #. Return to the **Home** page of **Prism Element**.
 
@@ -135,7 +211,11 @@ Enabling User Self Service
 Exploring Categories
 ====================
 
-<Categories are used to...>
+A **Category** is a key value pair. Categories are assigned to entities (such as VMs, Networks, or Images) based on some criteria (Location, Production-level, App Name, etc.). Policies can then be mapped to those entities that are assigned a specific category value.
+
+For example, you might have a Department category that includes values such as Engineering, Finance, and HR. In this case you could create one backup policy that applies to Engineering and HR and a separate (more stringent) backup policy that applies to just Finance. Categories allow you to implement a variety of policies across entity groups, and Prism Central allows you to quickly view any established relationships.
+
+In this exercise you'll create a custom category for Carol to help align access to the proper resources for the Fiesta app team.
 
 #. In **Prism Central**, select :fa:`bars` **> Virtual Infrastructure > Categories**.
 
@@ -143,12 +223,9 @@ Exploring Categories
 
 #. Click **New Category** and fill out the following fields:
 
-   - **Name** - Team
+   - **Name** - *Initials*\ -Team
    - **Purpose** - Allowing resource access based on Application Team
    - **Values** - Fiesta
-                  ToDo
-
-   .. figure:: images/15.png
 
 #. Click **Save**.
 
@@ -172,18 +249,18 @@ Exploring Categories
 
 #. Click **Save**.
 
-#. Select the *Initials*\ **-WinToolsVM** provisioned by Carol in the previous exercise, and click **Actions > Manage Categories**. Assign the **Team: Fiesta** category and **Save**.
+#. Select the *Initials*\ **-WinToolsVM** provisioned by Carol in the previous exercise, and click **Actions > Manage Categories**. Assign the *Initials*\ **-Team: Fiesta** category and **Save**.
 
 Exploring Roles
 ===============
 
-<Roles are used to...>
+By default, Prism Central ships with several Roles that map to common user personas. Roles define what actions a user can perform, and are mapped to categories or other entities.
 
 Carol needs to support two types of users working on the Fiesta team, developers who need to provision VMs for test environments, and operators who monitor multiple environments within the organization, but who have very limited capabilities to modify each environment.
 
 #. In **Prism Central**, select :fa:`bars` **> Administration > Roles**.
 
-   The Developer role provides...
+   The built-in Developer role allows users to create and modify VMs, create, provision, and manage Calm Blueprints, and more.
 
 #. Select the built-in **Developer** role and optionally review the approved actions for the role. Click **Manage Assignment**.
 
@@ -191,11 +268,15 @@ Carol needs to support two types of users working on the Fiesta team, developers
 
 #. Under **Users and Groups**, specify the **SSP Developers** User Group which should be automatically discovered from the NTNXLAB.local domain.
 
+   .. note::
+
+      This may already have been completed by another user, but you'll need to ensure the proper entities are also added below.
+
 #. Under **Entities**, use the drop down menu to specify the following resources:
 
    - **AHV Cluster** - *Your Assigned Cluster*
    - **AHV Subnet** - *Your Assigned User VLAN*
-   - **Category** - Environment:Testing, Environment:Staging, Environment:Dev, Team:Fiesta
+   - **Category** - Environment:Testing, Environment:Staging, Environment:Dev, *Initials*\ -Team:Fiesta
 
    .. figure:: images/20.png
 
@@ -207,7 +288,7 @@ Carol needs to support two types of users working on the Fiesta team, developers
 
 #. Fill out the following fields and click **Save** to create your custom role:
 
-   - **Role Name** - SmoothOperator
+   - **Role Name** - *Initials*\ -SmoothOperator
    - **Description** - Limited operator accounts
    - **App** - No Access
    - **VM** - Edit Access
@@ -227,11 +308,13 @@ Carol needs to support two types of users working on the Fiesta team, developers
 #. Click **New User** to add an additional assignment to the same role:
 
    - **Users and Groups** - operator02
-   - **Entity Categories** - EnvironmentDev, Team:Fiesta
+   - **Entity Categories** - EnvironmentDev, *Initials*\ -Team:Fiesta
 
    Operator02 is a user who sees all VMs tagged with either the Dev or Fiesta category values.
 
    .. figure:: images/22.png
+
+#. Click **Save**.
 
 #. For infrastructure administrators such as Carol, you can map AD users to the **Prism Admin** or **Super Admin** roles through selecting :fa:`bars` **> Prism Central Settings > Role Mapping** and adding a new **Cluster Admin** or **User Admin** mapping to AD accounts.
 
@@ -240,7 +323,11 @@ Carol needs to support two types of users working on the Fiesta team, developers
 Exploring Projects
 ==================
 
-In order for non-infrastructure administrators to access Calm, allowing them to create or manage applications and Blueprints, users or groups must first be assigned to a **Project**, which acts as a logical container for...
+The previous exercises are sufficient to provide basic VM creation self-service to Carol's users, but much of their work involves applications that consist of multiple VMs. Manual deployment of multiple VMs for a single development, testing, or staging environment is slow and subject to inconsistency and user error. To provide a better experience for her users, Carol will introduce Nutanix Calm into the environment.
+
+Nutanix Calm allows you to build, provision, and manage your applications across both private (AHV, ESXi) and public cloud (AWS, Azure, GCP) infrastructure.
+
+In order for non-infrastructure administrators to access Calm, allowing them to create or manage applications, users or groups must first be assigned to a **Project**, which acts as a logical container to define user roles, infrastructure resources, and resource quotas. Projects define a set users with a common set of requirements or a common structure and function, such as a team of engineers collaborating on the Fiesta project.
 
 #. In **Prism Central**, select :fa:`bars` **> Services > Calm**.
 
@@ -250,42 +337,58 @@ In order for non-infrastructure administrators to access Calm, allowing them to 
 
 #. Fill out the following fields:
 
+   .. note::
+
+      Adding the User/Group mappings before adding the Infrastructure can cause adding the Infrastructure to fail. To avoid this, add the Infrastructure before the User/Group mappings.
+
    - **Project Name** - *Initials*\ -FiestaProject
-   - **AHV Cluster** - *Your assigned cluster*
+
    - Under **Infrastructure**, select **Select Provider > Nutanix**
+
    - Click **Select Clusters & Subnets**
+
    - Select *Your Assigned Cluster*
+
    - Under **Subnets**, select **Primary**, **Secondary**, and *Your Assigned User VLAN*, and click **Confirm**
+
    - Mark *Your Assigned User VLAN* as the default network by clicking the :fa:`star`
+
    - Under **Users, Groups, and Roles**, select **+ User**
+
       - **Name** - SSP Developers
       - **Role** - Developers
       - **Action** - Save
+
    - Select **+ User**
+
       - **Name** - Operator02
-      - **Role** - SmoothOperator
+      - **Role** - *Initials*\ -SmoothOperator
       - **Action** - Save
+
    - Under **Quotas**, specify
+
       - **vCPUs** - 100
       - **Storage** - <Leave Blank>
       - **Memory** - 100
 
    .. figure:: images/24.png
 
-   .. note::
-
-      Adding the User/Group mappings before adding the Infrastructure can cause adding the Infrastructure to fail. To avoid this, add the Infrastructure before the User/Group mappings.
-
 #. Click **Save & Configure Environment**.
+
+``This will redirect you to the Envrionments page, but there is nothing needed to configure here. Move onto the next step.``
 
 Note that only **Operator02** was given access to the **Calm** project, rather than all Operator accounts.
 
 Staging Blueprints
 ==================
 
-While developers will have the ability to create and publish, Carol wants to provide a common blueprint used by the team.
+A Blueprint is the framework for every application that you model by using Nutanix Calm. Blueprints are templates that describe all the steps that are required to provision, configure, and execute tasks on the services and applications that are created. A Blueprint also defines the lifecycle of an application and its underlying infrastructure, starting from the creation of the application to the actions that are carried out on a application (updating software, scaling out, etc.) until the termination of the application.
 
-#. Download the **Fiesta-Multi** blueprint by clicking :download:`here <Fiesta-Multi.json>`.
+You can use Blueprints to model applications of various complexities; from simply provisioning a single virtual machine to provisioning and managing a multi-node, multi-tier application.
+
+While developer users will have the ability to create and publish their own Blueprints, Carol wants to provide a common Fiesta Blueprint used by the team.
+
+#. `Download the Fiesta-Multi Blueprint by right-clicking here <https://raw.githubusercontent.com/nutanixworkshops/ts2020/master/pc/dayinlife/Fiesta-Multi.json>`_.
 
 #. From **Prism Central > Calm**, select **Blueprints** from the lefthand menu and click **Upload Blueprint**.
 
@@ -293,19 +396,23 @@ While developers will have the ability to create and publish, Carol wants to pro
 
 #. Select **Fiesta-Multi.json**.
 
+#. Update the **Blueprint Name** to include your initials. Even across different projects, Calm Blueprint names must be unique.
+
 #. Select your Calm project and click **Upload**.
 
    .. figure:: images/26.png
 
 #. In order to launch the Blueprint you must first assign a network to the VM. Select the **NodeReact** Service, and in the **VM** Configuration menu on the right, select *Your Assigned User VLAN* as the **NIC 1** network.
 
-#. Specify the **Team: Fiesta** and **Environment: Dev** categories for the **NodeReact** Service.
+#. Specify the *Initials*\ **-Team: Fiesta** and **Environment: Dev** categories for the **NodeReact** Service.
 
    .. figure:: images/27.png
 
 #. Repeat the **NIC 1** and **Category** assignment for the **MySQL** Service.
 
 #. Click **Credentials** to define a private key used to authenticate to the CentOS VM that will be provisioned by the Blueprint.
+
+   .. figure:: images/27b.png
 
 #. Expand the **CENTOS** credential and use your preferred SSH key, or paste in the following value as the **SSH Private Key**:
 
@@ -341,17 +448,25 @@ While developers will have the ability to create and publish, Carol wants to pro
 
 #. Click **Save** and click **Back** once the Blueprint has completed saving.
 
-Within an hour, Carol has prepared the environment to service <more exposition>.
+   Within minutes, Carol has laid the groundwork to provide virtual infrastructure and application self-service directly to her end users.
 
 Developer Workflow
 ++++++++++++++++++
 
-Meet Dan. Dan works as part of the Fiesta Engineering team and...
+Meet Dan. Dan is a member of the Fiesta Engineering team, is currently going through a divorce, and trying to cut down on dairy. Dan is having a rough time. To make matters worse, he's behind on testing a new feature because previous requests to IT for virtual infrastructure that Dan needs to work have each taken several days.
+
+Dan has resorted to deploying VMs outside of the corporate network on his favorite public cloud service, with no security oversight, and putting company IP at risk. Dan has a lot on his plate, so we're not going to fault him for it.
+
+Carol to the rescue - she encourages Dan to follow the exercise below to allow him to easily deploy resources within the Fiesta project through Prism.
 
 #. Log out of the local **admin** account and log back into **Prism Central** with Dan's credentials:
 
    - **User Name** - devuser01@ntnxlab.local
    - **Password** - nutanix/4u
+
+   .. note::
+
+      If you experience a slow login, try logging in using an Incognito/Private browsing session.
 
 #. Select the :fa:`bars` menu and note that you now have significantly restricted access to the environment.
 
@@ -388,7 +503,7 @@ Meet Dan. Dan works as part of the Fiesta Engineering team and...
 
    .. note::
 
-      If you're unfamiliar with Calm Blueprints, explore the following key components of the **Fiesta-Multi** Blueprint:
+      If you're unfamiliar with Calm Blueprints, take a moment to explore the following key components of the **Fiesta-Multi** Blueprint:
 
       - Select either the **NodeReact** or **MySQL** service and review the **VM** configuration in the configuration pane on the right hand of the screen.
 
@@ -411,8 +526,6 @@ Meet Dan. Dan works as part of the Fiesta Engineering team and...
          .. figure:: images/35.png
 
       - Click **Back**.
-
-      If you're interested in building a Blueprint from scratch, check out <insert lab link here>.
 
 #. Click **Launch** to provision an instance of the Blueprint.
 
@@ -443,12 +556,12 @@ Meet Dan. Dan works as part of the Fiesta Engineering team and...
 
    .. figure:: images/41.png
 
-   By leveraging the built-in RBAC capabilities of Prism Central and Calm, Carol has enabled the engineering team...
+   Instead of filing tickets and waiting days, Dan was able to get his test environment up and running before lunch. Instead of drowning his sorrows in Ben & Jerry's tonight, Dan is going to go to the gym, and eat vegetables with his dinner. Go, Dan!
 
 Operator Workflows
 ++++++++++++++++++
 
-Meet Ronald and Elise.
+Meet Ronald and Elise. Ronald works as a Level 3 engineering with the corporate IT helpdesk, and Elise works as a QA intern on the Fiesta team. In the brief exercise below you will explore and contrast their levels of access based on the roles defined and categories assigned by Carol.
 
 #. Log out of the **devuser01** account and log back into **Prism Central** with Ronald's credentials:
 
@@ -466,7 +579,7 @@ Meet Ronald and Elise.
    - **User Name** - operator02@ntnxlab.local
    - **Password** - nutanix/4u
 
-#. Note that only resources tagged with the **Team: Fiesta** category are available to be managed.
+#. Note that only resources tagged with the *Initials*\ **-Team: Fiesta** category are available to be managed.
 
    .. figure:: images/43.png
 
@@ -474,6 +587,8 @@ Meet Ronald and Elise.
 
 Using Entity Browser, Search, and Analysis
 ++++++++++++++++++++++++++++++++++++++++++
+
+Now that Carol has freed up time to focus on replacing additional legacy infrastructure, it is important for her to understand how a large, diverse environment can all be managed and monitored via Prism Central. In the exercise below you will explore common workflows for working with entities across multiple clusters in a Nutanix environment.
 
 #. Log out of the **operator02** account and log back into **Prism Central** with Carol's AD credentials:
 
@@ -485,7 +600,7 @@ Using Entity Browser, Search, and Analysis
 #. Select **Filters** and explore the available options. Specify the following example filters:
 
    - **Name** - Contains *Initials*
-   - **Categories** - Team: Fiesta
+   - **Categories** - *Initials*\ -Team: Fiesta
    - **Hypervisor** - AHV
    - **Power State** - On
 
@@ -505,25 +620,36 @@ Using Entity Browser, Search, and Analysis
 
    .. figure:: images/46.png
 
-#. To fully appreciate the power of Prism Central of leveraging the Entity Browser in combination with Search & the Analysis page, view the following video:
+#. To fully appreciate the power of Prism Central for searching, sorting, and analyzing entities, view the following brief video:
 
-   - <Embedded Atreyee video>
+   .. raw:: html
+
+     <center><iframe width="640" height="360" src="https://www.youtube.com/embed/HXWCExTlXm4?rel=0&amp;showinfo=0" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></center>
 
 Improved Life Cycle Management
 ++++++++++++++++++++++++++++++
 
-<Thiago's embedded, interative LCM demos for PE & PC>
+While not a daily activity, Carol previously dedicated as much as 40% of her time planning and executing software and firmware updates to legacy infrastructure, leaving little time for innovation. In her Nutanix environments, Carol is leveraging the rules engine and rich automation in Lifecycle Manager (LCM) to take the hassle out of planning and applying her infrastructure software updates.
+
+Unfortunately in a shared cluster environment, you're not able to test LCM directly. To become more familiar with LCM's capabilities and ease of use, click through each of the interactive demos available below.
+
+5.11 Prism Element LCM Interactive Demo
+=======================================
+
+.. figure:: https://demo-captures.s3-us-west-1.amazonaws.com/pe-5.11-lcm/story_content/thumbnail.jpg
+   :target: https://demo-captures.s3-us-west-1.amazonaws.com/pe-5.11-lcm/story.html
+   :alt: Prism Element 5.11 LCM Interactive Demo
+
+5.11 Prism Central LCM Interactive Demo
+=======================================
+
+.. figure:: https://demo-captures.s3-us-west-1.amazonaws.com/pc-5.11-lcm/story_content/thumbnail.jpg
+   :target: https://demo-captures.s3-us-west-1.amazonaws.com/pc-5.11-lcm/story.html
+   :alt: Prism Central 5.11 LCM Interactive Demo
 
 Next Steps
 ++++++++++
 
-In this lab we've explored who Prism Central can be used to enable critical functionality for multiple personas, including:
+In under 2 hours, we've shown you how Prism delivers a frictionless experience for virtual infrastructure administrators when it comes to deploying storage, networks, and workloads, monitoring the environment, and updating software. You've seen how native Prism Central capabilities, combined with Active Directory, can be used to control access and enable self-service for non-administrator personas. Additionally you enabled rich application automation capabilities for your Private Cloud through Nutanix Calm.
 
-   - Simplified operations for virtual infrastructure owners
-   - Categories
-   - Projects
-   - AD-integrated self-service for application developers and operators
-   - Calm
-   - EB/Search/Analysis
-
-Continue to the following exercise to dive deeper into Prism Central's operational insights and smart datacenter automation capabilities!
+Private Clouds aren't built on IaaS, self-service, and application automation alone, however. In the upcoming labs, you will see how Nutanix has built on its foundation to provide advanced monitoring and operations capabilities through its additional **Prism Pro** features, consolidate storage technologies with **Files**, native microsegmentation with **Flow**, and more!

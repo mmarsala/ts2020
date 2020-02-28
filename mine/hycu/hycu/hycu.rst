@@ -55,7 +55,7 @@ Configuring HYCU Appliance
    - Remove **CD-ROM** Disk
    - Select **Add New NIC**
 
-     - **VLAN Name** - Primary
+     - **VLAN Name** - Secondary
      - Select **Add**
 
 #. Select the *Initials*\ **-HYCU** VM and click **Power on**.
@@ -109,7 +109,7 @@ If the cluster on which the HYCU virtual appliance is being deployed is a Nutani
 
    - **URL** - *Your Prism Element URL* (e.g. https://10.XX.YY.37:9440)
    - **User** - admin
-   - **Password** - nutanix/4u
+   - **Password** - *Prism Element Password*
 
 #. Click **Next**.
 
@@ -165,7 +165,7 @@ HYCU makes it incredibly easy to configure a Nutanix cluster (whether Mine or ot
    - **Type** - Nutanix
    - **URL** - *Your Prism Element URL* (e.g. https://10.XX.YY.37:9440)
    - **Username** - admin
-   - **Password** - nutanix/4u
+   - **Password** - *Prism Element Password*
 
    .. figure:: images/9.png
 
@@ -198,14 +198,14 @@ HYCU uses policies to define RPO, RTO, retention, and backup target(s), allowing
 #. Fill out the following fields and click **Save**:
 
    - **Name** - Fast
-   - **Description** - 1 Hour RPO/RTO, Fast Restore Enabled (1 Day)
+   - **Description** - 1 Hour RPO/RTO, Fast Restore Enabled (1 Week)
    - **Enabled Options** - Backup, Fast Restore
    - **Backup Every** - 1 Hours
    - **Recover Within** - 1 Hours
    - **Retention** - 4 Weeks
    - **Targets** - Automatically selected
    - **Backup Threshold** - 25%
-   - **Fast Restore Retention** - 1 Day
+   - **Fast Restore Retention** - 1 Weeks
 
    .. figure:: images/11.png
 
@@ -230,6 +230,9 @@ Backing Up A VM
 
 In this exercise you will back up a Windows Server VM with a mounted iSCSI Volume Group. In-guest iSCSI disks are common in enterprise apps such as SQL Server that require shared storage for high availability.
 
+.. note::
+   It is recommended to connect to the *Initials*\ **-HYCUBackupTest** via RDP so you can copy/paste the initiator name (IQN).
+
 #. In **Prism > VM > Table**, click **+ Create VM**.
 
 #. Fill out the following fields and click **Save**:
@@ -241,7 +244,7 @@ In this exercise you will back up a Windows Server VM with a mounted iSCSI Volum
    - Select **+ Add New Disk**
 
      - **Operation** - Clone from Image Service
-     - **Image** - Windows2012
+     - **Image** - Windows2012R2.qcow2
      - Select **Add**
    - Select **Add New NIC**
 
@@ -254,19 +257,23 @@ In this exercise you will back up a Windows Server VM with a mounted iSCSI Volum
 
 #. Complete the Sysprep process and provide a password for the local Administrator account (e.g. **nutanix/4u**).
 
-#. Log in as the local Administrator and open **iSCSI Initiator**. When prompted to start the Microsoft iSCSI service, click **Yes**.
+#. From within Prism, highlight the VM and select "Manage Guest Tools." Ensure that "Enable Nutanix Guest Tools," and "Mount Nutanix Guest Tools" are selected:
+
+   .. figure:: images/13c.png
+
+#. Log in as the local Administrator, navigate to the CDROM drive and install the Nutanix Guest Tools
+
+   .. figure:: images/13d.png
+
+#. Open **iSCSI Initiator** on the Windows VM. When prompted to start the Microsoft iSCSI service, click **Yes**.
 
 #. In **iSCSI Initiator Properties**, select the **Configuration** tab and note the **Initiator Name** value.
 
    .. figure:: images/14.png
 
-   .. note::
-
-     It is recommended to connect to the *Initials*\ **-HYCUBackupTest** via RDP so you can copy/paste the initiator name (IQN).
-
 #. From **Prism > Storage > Table > Volume Groups**, select **+ Volume Group**.
 
-#. Fill out the following fields and click **Save**:
+#. Fill out the following fields:
 
    - **Name** - *Initials*\ -BackupTestVG
    - **iSCSI Target Name Prefix** - *Initials*\ -HYCU-Target
@@ -278,8 +285,10 @@ In this exercise you will back up a Windows Server VM with a mounted iSCSI Volum
    - Select **Enable external client access**
    - Select **+ Add New Client**
 
-     - **Client IQN** - *Initials*\ -HYCUBackupTest *Initiator Name*
+     - **Client IQN** - *Initiator Name* (Initiator Name was noted earlier on the Windows VM under iSCSI Initiator Properties)
      - Select **Add**
+
+#. Click **Save**
 
 #. Return to your *Initials*\ **-HYCUBackupTest** console or RDP session.
 
@@ -312,11 +321,13 @@ In this exercise you will back up a Windows Server VM with a mounted iSCSI Volum
 
 #. From the upper toolbar, click **(Key Icon) Credentials > + New**.
 
-#. Fill out the following fields and click **Save**:
+#. Fill out the following fields:
 
    - **Name** - Local Windows Admin
    - **Username** - Administrator
    - **Password** - *The password you defined when creating the HYCUBackupTest VM*
+
+#. Click **Save**
 
 #. Select the *Initials*\ **-HYCUBackupTest** VM and click **(Key Icon) Credentials**. Select the **Local Windows Admin** credential and click **Assign** to map the credential to the selected VM.
 
@@ -375,7 +386,7 @@ Restoring Backups
 
    .. figure:: images/21.png
 
-#. Select the most recent incremental restore point and click **Restore VM or vDisks**.
+#. Select the most recent incremental restore point and click **Restore VM**.
 
    HYCU offers the ability to overwrite or clone the entire VM, as well as the ability to selectively restore or clone individual VM disks or volume groups. Restoring volume groups is helpful in use cases where you would prefer to mount a disk to an existing VM.
 
@@ -384,6 +395,8 @@ Restoring Backups
 #. Select **Clone VM** and click **Next**.
 
    .. figure:: images/20.png
+
+   .. note:: HYCU will clone the VM, however there will be a warning since the VM has Volume Groups attached. You can safely disregard this warning
 
 #. Fill out the following fields and click **Restore**:
 
@@ -435,7 +448,7 @@ In addition to restoring full VMs or disks, HYCU can also be used to directly re
 
    .. figure:: images/22.png
 
-#. Select **Restore to Virtual Machine** and click **Next**. Alternatively, if you have completed the :ref:`files` lab, you can opt to restore the file directly to an SMB share.
+#. Select **Restore to Virtual Machine** and click **Next**. 
 
 #. Fill out the following fields and click **Restore**:
 
@@ -486,7 +499,7 @@ Configuring a Bucket
 
 #. Once created, click on the bucket and select "User Access," then click the "Edit User Access"
 
-#. Type "*initials*-hcyu@ntnxlab.local" and select both the "Read" and "Write" options, then click Save
+#. Type "*initials*-hycu@ntnxlab.local" and select both the "Read" and "Write" options, then click Save
 
    .. figure:: images/35.png
 
@@ -530,7 +543,7 @@ You can now modify existing HYCU policies or create new policies which "tier-off
 
    .. figure:: images/39.png
 
-#. Click Save
+#. Click Save then click Close
 
 #. Click "+ New" to create a new Backup Policy
 
@@ -562,7 +575,7 @@ HYCU is the first solution to provide fully integrated backup and restore capabi
 
 While classic backup solutions heavily burden the file server by using the Network Data Management Protocol (NDMP) approach, needing to traverse the whole file tree to identify changed files, HYCU uses Nutanix storage layer snapshots and CFT to get the changed files instantly. This means HYCU backups remove impact on the file server and significantly reduce the data-loss risk by backing up file share changes on hourly basis, compared to classic, nightly file share backups.
 
-This exercise requires completion of the :ref:`files` lab to properly stage the environment. In this exercise you will configure Nutanix Files as a backup source, as well as target a Nutanix Files SMB share for backup data.
+In this exercise you will configure Nutanix Files as a backup source, as well as target a Nutanix Files SMB share for backup data.
 
 Adding SMB Share Target
 .......................
@@ -592,7 +605,7 @@ Files backups require either a NFS export, SMB share or S3 (Cloud) target, meani
    - **Domain** - NTNXLAB
    - **Username** - Administrator
    - **Password** - nutanix/4u
-   - **SMB Server Name** - *Initials*\ -Files.ntnxlab.local
+   - **SMB Server Name** - BootcampFS.ntnxlab.local
    - **Shared Folder** - /\ *Initials*\ -HYCUTarget
 
    .. figure:: images/24.png
@@ -610,7 +623,7 @@ HYCU requires credentials that allow it to access Nutanix Files REST APIs, inclu
 
 #. Fill out the following fields and click **Save > Close**:
 
-   - **Username** - hycu
+   - **Username** - *Initials*\ -hycu
    - **Password** - nutanix/4u
 
    .. figure:: images/26.png
@@ -626,8 +639,8 @@ For AHV clusters with DHCP enabled, the additional HYCU instance can be provisio
 
 #. Click **+ New** and fill out the following fields:
 
-   - **URL** - https://\ *Initials*\ -files.ntnxlab.local:9440
-   - **Nutanix Files Server Credentials > Username** - hycu
+   - **URL** - https://bootcampfs.ntnxlab.local:9440
+   - **Nutanix Files Server Credentials > Username** - *Initials*\ -hycu
    - **Nutanix Files Server Credentials > Password** - nutanix/4u
    - **Backup Credentials > Username** - NTNXLAB\\Administrator
    - **Backup Credentials > Password** - nutanix/4u
@@ -651,7 +664,7 @@ Backing Up & Restoring Files
 
 Backup and restore for Files operates very similarly to VM/VG workflows, using the same customizable policies and owner/self-service constructs.
 
-#. Add the SMB target you created, **Files-HYCUTarget** into customized **Fast** policy.
+#. Add the SMB target you created, *Initials*\-HYCUTarget** into customized **Fast** policy.
 
 #. From the **HYCU** sidebar, click :fa:`bars` **> Shares**.
 
@@ -659,7 +672,7 @@ Backup and restore for Files operates very similarly to VM/VG workflows, using t
 
    .. note::
 
-     If you have created other shares that are populated with files you could select one of those as well.
+     You may need to return to Prism and create an SMB share named 'Marketing' If you have created other shares that are populated with files you could select one of those as well.
 
 #. Select your customized **Fast** policy and click **Assign**.
 
